@@ -1,0 +1,125 @@
+@use "sass:color";
+
+$bg: #000;
+$fg: #f1f1f1;
+$accent: #378DF7;
+$radius: 7px;
+
+window.Bar {
+    border: none;
+    box-shadow: none;
+    background-color: $bg;
+    color: $fg;
+    font-size: 1.1em;
+    font-weight: bold;
+
+    label {
+        margin: 0 8px;
+    }
+
+    .Tools {
+        min-width: 100px;
+    }
+
+    button {
+        all: unset;
+        background-color: transparent;
+        padding: 4px 4px;
+        border-radius: $radius;
+
+        &:hover {
+            background-color: color.adjust($fg, $alpha: -0.84);
+            border-color: color.adjust($accent, $alpha: -0.8);
+        }
+
+        &:active {
+            background-color: color.adjust($fg, $alpha: -0.8)
+        }
+    }
+
+
+    .Workspaces  {
+        button {
+            all: unset;
+            background-color: transparent;
+            padding: 4px 4px;
+            border-radius: $radius;
+
+            &:hover {
+                background-color: color.adjust($fg, $alpha: -0.84);
+                border-color: color.adjust($accent, $alpha: -0.8);
+            }
+
+            &:active {
+                background-color: color.adjust($fg, $alpha: -0.8)
+            }
+        }
+
+        label {
+            transition: 200ms;
+            padding: 0 8px;
+            margin: 2px;
+            border-radius: $radius;
+            border: 1pt solid transparent;
+        }
+
+        .focused label {
+            color: $accent;
+            border-color: $accent;
+        }
+
+        .Workspace {
+            padding: 0px 10px;
+            &:active {
+                background-color: color.adjust($fg, $alpha: -0.84);
+            }
+            .WorkspaceDot {
+                min-width: 7px;
+                min-height: 7px;
+                background-color: $fg;
+                border-radius: 50%;
+                margin: 10px 0px;
+                /* margin: auto; */
+            }
+        }
+    }
+
+    .SysTray {
+        margin-right: 8px;
+
+        button {
+            padding: 0 4px;
+        }
+    }
+
+    .FocusedClient {
+        color: $accent;
+    }
+
+    .Media .Cover {
+        min-height: 1.2em;
+        min-width: 1.2em;
+        border-radius: $radius;
+        background-position: center;
+        background-size: contain;
+    }
+
+    .Battery label {
+        padding-left: 0;
+        margin-left: 0;
+    }
+
+    .AudioSlider {
+        /* min-width: 140px; */
+
+
+        icon {
+            /* margin-right: .6em; */
+        }
+
+        & {
+            margin: 0 5px;
+        }
+
+    }
+}
