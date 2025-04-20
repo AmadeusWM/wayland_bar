@@ -158,13 +158,21 @@ type MmcliOutput = {
 function SignalStrength() {
   const signal = Variable<MmcliOutput | null>(null).poll(5000, () => {
       try {
-          const output = GLib.spawn_command_line_sync("mmcli -m 0 --output-json")[1]
-          if (!output) {
-            return null;
-          }
-          const outputString = new TextDecoder().decode(output);
-          const mmcliOutput: MmcliOutput = JSON.parse(outputString);
-          return mmcliOutput
+        const modemListOutput = GLib.spawn_command_line_sync("mmcli -L --output-json")[1];
+        if (!modemListOutput) {
+          return null;
+        }
+        const modemListString = new TextDecoder().decode(modemListOutput);
+        const modemListJson = JSON.parse(modemListString);
+        const modemId = modemListJson["modem-list"][0].split("/").pop();
+
+        const output = GLib.spawn_command_line_sync(`mmcli --output-json -m ${modemId}`)[1];
+        if (!output) {
+          return null;
+        }
+        const outputString = new TextDecoder().decode(output);
+        const mmcliOutput: MmcliOutput = JSON.parse(outputString);
+        return mmcliOutput;
       } catch (e) {
           console.error("Failed to fetch signal strength:", e);
           return null;
@@ -194,6 +202,75 @@ function SignalStrength() {
   </box>
 }
 
+function RamUsage() {
+    const ramUsage = Variable<number>(0).poll(1000, () => {
+        const memInfo = GLib.file_get_contents("/proc/meminfo")[1];
+        if (!memInfo) {
+            return 0;
+        }
+        const memInfoString = new TextDecoder().decode(memInfo);
+        const lines = memInfoString.split("\n");
+        const memTotal = parseInt(lines.find(line => line.startsWith("MemTotal:"))?.split(/\s+/)[1] || "0", 10);
+        const memAvailable = parseInt(lines.find(line => line.startsWith("MemAvailable:"))?.split(/\s+/)[1] || "0", 10);
+        return ((memTotal - memAvailable) / memTotal) * 100;
+    });
+
+    return <box className="RamUsage">
+        {bind(ramUsage).as(usage => {
+            const percentage = Math.round(usage);
+            return <circularprogress
+                value={percentage / 100}
+                className="RamUsageCircularProgress"
+            >
+            </circularprogress>;
+        })}
+    </box>
+}
+
+function CpuUsage() {
+    const cpuUsage = Variable<{ usage: number; previousIdleTime: number; previousTotalTime: number }>({
+        usage: 0,
+        previousIdleTime: 0,
+        previousTotalTime: 0,
+    }).poll(1000, (prev) => {
+        const statInfo = GLib.file_get_contents("/proc/stat")[1];
+        if (!statInfo) {
+            return { ...prev, usage: 0 };
+        }
+        const statInfoString = new TextDecoder().decode(statInfo);
+        const lines = statInfoString.split("\n");
+        const cpuLine = lines.find(line => line.startsWith("cpu "));
+        if (!cpuLine) {
+            return { ...prev, usage: 0 };
+        }
+        const cpuTimes = cpuLine.split(/\s+/).slice(1).map(Number);
+        const idleTime = cpuTimes[3];
+        const totalTime = cpuTimes.reduce((acc, time) => acc + time, 0);
+
+        const idleDelta = idleTime - prev.previousIdleTime;
+        const totalDelta = totalTime - prev.previousTotalTime;
+
+        const usage = totalDelta > 0 ? ((totalDelta - idleDelta) / totalDelta) * 100 : 0;
+
+        return {
+            usage,
+            previousIdleTime: idleTime,
+            previousTotalTime: totalTime,
+        };
+    });
+
+    return <box className="CpuUsage">
+        {bind(cpuUsage).as(usage => {
+            const percentage = Math.round(usage.usage);
+            return <circularprogress
+                value={percentage / 100}
+                className="CpuUsageCircularProgress"
+            >
+            </circularprogress>;
+        })}
+    </box>
+}
+
 export default function Bar(monitor: Gdk.Monitor) {
     const { TOP, LEFT, RIGHT } = Astal.WindowAnchor
 
@@ -205,6 +282,10 @@ export default function Bar(monitor: Gdk.Monitor) {
         anchor={TOP | LEFT | RIGHT}>
         <centerbox>
             <box hexpand halign={Gtk.Align.START}>
+              <box className="Stats">
+                  <RamUsage/>
+                  <CpuUsage/>
+              </box>
               <Workspaces forMonitor={monitor} showInactiveIcons></Workspaces>
             </box>
             <box hexpand >
@@ -214,6 +295,7 @@ export default function Bar(monitor: Gdk.Monitor) {
               hexpand
               halign={Gtk.Align.END}
               // spacing={4}
+
             >
               <PowerProfileSelector/>
               <button
