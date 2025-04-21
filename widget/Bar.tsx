@@ -47,7 +47,8 @@ function BatteryLevel() {
     </box>
 }
 
-function Time({ format = "%H:%M - %B %e" }) {
+// function Time({ format = "%H:%M - %B %e" }) {
+function Time({ format = "%H : %M" }) {
     const time = Variable<string>("").poll(1000, () =>
         GLib.DateTime.new_now_local().format(format)!)
 
@@ -282,14 +283,14 @@ export default function Bar(monitor: Gdk.Monitor) {
         anchor={TOP | LEFT | RIGHT}>
         <centerbox>
             <box hexpand halign={Gtk.Align.START}>
-              <box className="Stats">
-                  <RamUsage/>
-                  <CpuUsage/>
-              </box>
               <Workspaces forMonitor={monitor} showInactiveIcons></Workspaces>
             </box>
             <box hexpand >
               <Time />
+              <box className="Stats">
+                  <RamUsage/>
+                  <CpuUsage/>
+              </box>
             </box>
             <box
               hexpand
@@ -304,6 +305,7 @@ export default function Bar(monitor: Gdk.Monitor) {
               >
                 <box
                   spacing={8}
+                  hexpand
                 >
                   <Wifi />
                   <SignalStrength/>

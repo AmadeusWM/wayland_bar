@@ -63,7 +63,10 @@ function Workspace(workspace: WorkspaceWithWindows, showInactiveIcons: boolean) 
 
   return <button onClick={() => niri.focusWorkspaceId(workspace.id)} className={className}>
       {/* <label className="ws-idx" label={workspace.idx.toString()}></label> */}
-      <box className="WorkspaceDot"/>
+      <box
+        css={`min-width: ${workspace.windows.length * 7}px`}
+        className="WorkspaceDot"
+      />
       {/* {showIcons && workspace.windows.map(win => <box className="WorkspaceWindow"/>)} */}
   </button>
 }
